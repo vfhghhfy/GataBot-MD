@@ -13,10 +13,10 @@ import { ar, en, es, id, pt } from './lib/idiomas/total-idiomas.js'
 // [ES] > Agrega el número que será Bot y los que serán propietarios.
 // [EN] > Add the number that will be Bot and those that will be owners.
 global.owner = [
-'5214531287294', 
-'593968263524',
-'5492916450307',
-'5215539356057'
+'967778668253', 
+'967778668253',
+'967778668253',
+'967778668253'
 ]
 
 global.mods = []
@@ -97,9 +97,9 @@ global.moment = moment
 // [EN] > Adding yourself, collaborators or helpers will appear in the contact list command.
 global.official = [
 // Agregate si eres Owner
-['593968263524', 'Gata Dios 💻', 1],
-['573147616444', '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1],
-['5521989092076', '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿𝗮 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1]
+['967778668253', 'Gata Dios 💻', 1],
+['967778668253', '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1],
+['967778668253', '𝗗𝗲𝘀𝗮𝗿𝗿𝗼𝗹𝗹𝗮𝗱𝗼𝗿𝗮 𝗢𝗳𝗶𝗰𝗶𝗮𝗹 💻', 1]
 ]
 
 global.mail = '' // Add email
@@ -592,26 +592,26 @@ else return emotttt[results[0][0]]
 
 // IDs de canales
 global.ch = {
-ch1: '120363203805910750@newsletter',
-ch2: '120363317213148300@newsletter',
-ch3: '120363301598733462@newsletter',
-ch4: '120363418207293803@newsletter',
-ch5: '120363343811229130@newsletter',
-ch6: '120363307551724976@newsletter',
-ch7: '120363370415738881@newsletter',
-ch8: '120363374372683775@newsletter',
-ch9: '120363190430436554@newsletter',
-ch10: '120363323286489957@newsletter',
-ch11: '120363263466636910@newsletter',
-ch12: '120363323882134704@newsletter',
-ch13: '120363347440552857@newsletter',
-ch14: '120363403479934106@newsletter',
-ch15: '120363419262674739@newsletter',
-ch16: '120363167110224268@newsletter',
-ch17: '120363302472386010@newsletter',
-ch18: '120363305941657414@newsletter',
-ch19: '120363336642332098@newsletter',
-ch20: '120363385983031660@newsletter'
+ch1: '120363323732849137@newsletter',
+ch2: '120363323732849137@newsletter',
+ch3: '120363323732849137@newsletter',
+ch4: '120363323732849137@newsletter',
+ch5: '120363323732849137@newsletter',
+ch6: '120363323732849137@newsletter',
+ch7: '120363323732849137@newsletter',
+ch8: '120363323732849137@newsletter',
+ch9: '120363323732849137@newsletter',
+ch10: '120363323732849137@newsletter',
+ch11: '120363323732849137@newsletter',
+ch12: '120363323732849137@newsletter',
+ch13: '120363323732849137@newsletter',
+ch14: '120363323732849137@newsletter',
+ch15: '120363323732849137@newsletter',
+ch16: '120363323732849137@newsletter',
+ch17: '120363323732849137@newsletter',
+ch18: '120363323732849137@newsletter',
+ch19: '120363323732849137@newsletter',
+ch20: '120363323732849137@newsletter'
 }
 // • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • • •
 
@@ -622,24 +622,24 @@ console.log(chalk.redBright("Update 'config.js'"))
 import(`${file}?update=${Date.now()}`)
 })
 
-global.yt = 'https://youtube.com/@gatadios'
-global.ig = 'https://www.instagram.com/gata_dios'
-global.md = 'https://github.com/GataNina-Li/GataBot-MD'
-global.fb = 'https://www.facebook.com/groups/872989990425789'
+global.yt = 'https://youtube.com/@gaios'
+global.ig = 'https://www.instagram.com/4dmdmd'
+global.md = 'https://github.com/GatNina-Li/Gatot-MD'
+global.fb = 'https://www.facebook.com/groups/829425789'
 global.tk = 'https://www.tiktok.com/@gata_dios'
 global.ths = 'https://www.threads.net/@gata_dios'
-global.paypal = 'https://paypal.me/OficialGD'
+global.paypal = 'https://paypal.me/OfilGD'
 global.asistencia = 'https://wa.me/message/MEKOUFBEOG5ED1'
-global.all = 'https://www.atom.bio/GataBot'
-global.canal1 = 'https://whatsapp.com/channel/0029Va4QjH7DeON0ePwzjS1A'
-global.canal2 = 'https://whatsapp.com/channel/0029Va6yY0iLY6d6XDmqA03g'
-global.canal3 = 'https://whatsapp.com/channel/0029VaKn22pDJ6GwY61Ftn15'
-global.canal4 = 'https://t.me/globalgb'
+global.all = 'https://www.atom.bio/G.aBot'
+global.canal1 = 'https://whatsapp.com/chal/0029Va4QjH7DeON0ePwzjS1A'
+global.canal2 = 'https://whatsapp.com/chel/0029Va6yY0iLY6d6XDmqA03g'
+global.canal3 = 'https://whatsapp.com/channel/0029Vn22pDJ6GwY61Ftn15'
+global.canal4 = 'https://t.mebalgb'
 
-global.soporteGB = 'https://chat.whatsapp.com/GQ82mPnSYnm0XL2hLPk7FV'
-global.grupo1 = 'https://chat.whatsapp.com/JRG6rVJJV40IxlI1wjQ0E9'
-global.grupo2 = 'https://chat.whatsapp.com/B5s3ohjEGofH5YDD05jAV5'
-global.grupo_collab1 = 'https://chat.whatsapp.com/IO5k0UOF7hOJHE1eH3Fcxh'
+global.soporteGB = 'https://chat.whatsapp.com/GQ82mnm0XL2hLPk7FV'
+global.grupo1 = 'https://chat.whatsapp.com/JRG6V40IxlI1wjQ0E9'
+global.grupo2 = 'https://chat.whatsapp.com/B5sGofH5YDD05jAV5'
+global.grupo_collab1 = 'https://chat.whatsapp.com/IO57hOJHE1eH3Fcxh'
 global.grupo_collab2 = 'https://chat.whatsapp.com/GFsgXW2VD4I4FEOSlEg9wp'
-global.grupo_collab3 = 'https://chat.whatsapp.com/H1TEBeMtFVv3RcayD1WfGU'
-global.grupo_collab4 = 'https://chat.whatsapp.com/LuD3YzdOjH16LUwPPCVmL6'
+global.grupo_collab3 = 'https://chat.whatsapp.com/H1TFVv3RcayD1WfGU'
+global.grupo_collab4 = 'https://chat.whatsapp.com/LuDOjH16LUwPPCVmL6'
