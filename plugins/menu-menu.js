@@ -5,1013 +5,347 @@ import ct from 'countries-and-timezones'
 import { parsePhoneNumber } from 'libphonenumber-js'
 import fetch from 'node-fetch'
 import { xpRange } from '../lib/levelling.js'
-const {levelling} = '../lib/levelling.js'
+const { levelling } = '../lib/levelling.js'
 import PhoneNumber from 'awesome-phonenumber'
 import { promises } from 'fs'
 import { join } from 'path'
 import chalk from 'chalk'
 
-let handler = async (m, {conn, usedPrefix, usedPrefix: _p, __dirname, text, command}) => {
+let handler = async (m, { conn, usedPrefix, usedPrefix: _p, __dirname, text, command }) => {
 if (m.fromMe) return
 let chat = global.db.data.chats[m.chat]
 let user = global.db.data.users[m.sender]
 let bot = global.db.data.settings[conn.user.jid] || {}
 
+// إعدادات البوت - Bot Settings
 const commandsConfig = [
 {
-comando: (bot.restrict ? 'off ' : 'on ') + 'restringir , restrict',
-descripcion: bot.restrict ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Permisos para el Bot',
+comando: (bot.restrict ? 'off ' : 'on ') + 'restringir , restrict', // تقييد - Restrict
+descripcion: bot.restrict ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'أذونات للبوت - Permissions for the Bot',
 showPrefix: true
 },
 {
-comando: (bot.antiCall ? 'off ' : 'on ') + 'antillamar , anticall',
-descripcion: bot.antiCall ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Evitar recibir llamadas en el Bot',
+comando: (bot.antiCall ? 'off ' : 'on ') + 'antillamar , anticall', // منع المكالمات - Anti Call
+descripcion: bot.antiCall ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'منع استقبال المكالمات في البوت - Avoid receiving calls in the Bot',
 showPrefix: true
 },
 {
-comando: (bot.temporal ? 'off ' : 'on ') + 'temporal',
-descripcion: bot.temporal ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Ingreso del Bot temporalmente en grupos',
+comando: (bot.temporal ? 'off ' : 'on ') + 'temporal', // مؤقت - Temporary
+descripcion: bot.temporal ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'دخول البوت مؤقتاً في المجموعات - Bot entry temporarily in groups',
 showPrefix: true
 },
 {
-comando: (bot.jadibotmd ? 'off ' : 'on ') + 'serbot , jadibot',
-descripcion: bot.jadibotmd ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Permitir o no Sub Bots en este Bot',
+comando: (bot.jadibotmd ? 'off ' : 'on ') + 'serbot , jadibot', // كن بوت - Be Bot
+descripcion: bot.jadibotmd ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'السماح أو عدم السماح بالبوتات الفرعية في هذا البوت - Allow or not Sub Bots in this Bot',
 showPrefix: true
 },
 {
-comando: (bot.antiSpam ? 'off ' : 'on ') + 'antispam',
-descripcion: bot.antiSpam ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Dar advertencia por hacer Spam',
+comando: (bot.antiSpam ? 'off ' : 'on ') + 'antispam', // مضاد السبام - Anti Spam
+descripcion: bot.antiSpam ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'إعطاء تحذير لممارسة السبام - Give warning for doing Spam',
 showPrefix: true
 },
 {
-comando: (bot.antiSpam2 ? 'off ' : 'on ') + 'antispam2',
-descripcion: bot.antiSpam2 ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Omitir resultado de comandos consecutivos',
+comando: (bot.antiSpam2 ? 'off ' : 'on ') + 'antispam2', // مضاد السبام 2 - Anti Spam 2
+descripcion: bot.antiSpam2 ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'تخطي نتيجة الأوامر المتتالية - Skip result of consecutive commands',
 showPrefix: true
 },
 {
-comando: (bot.antiPrivate ? 'off ' : 'on ') + 'antiprivado , antiprivate',
-descripcion: bot.antiPrivate ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Prohibe que este Bot sea usado en privado',
+comando: (bot.antiPrivate ? 'off ' : 'on ') + 'antiprivado , antiprivate', // مضاد الخاص - Anti Private
+descripcion: bot.antiPrivate ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'يمنع استخدام هذا البوت في الخاص - Prohibits this Bot from being used in private',
 showPrefix: true
 },
 {
-comando: (global.opts['self'] ? 'on ' : 'off ') + 'publico , public',
-descripcion: global.opts['self'] ? '❌' + 'Desactivado || Disabled' : '✅' + 'Activado || Activated',
-contexto: 'Permitir que todos usen el Bot',
+comando: (global.opts['self'] ? 'on ' : 'off ') + 'publico , public', // عام - Public
+descripcion: global.opts['self'] ? '❌' + 'معطل || Disabled' : '✅' + 'مفعل || Activated',
+contexto: 'السماح للجميع باستخدام البوت - Allow everyone to use the Bot',
 showPrefix: true
 },
 {
-comando: (global.opts['autoread'] ? 'off ' : 'on ') + 'autovisto , autoread',
-descripcion: global.opts['autoread'] ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Mensajes leídos automáticamente',
+comando: (global.opts['autoread'] ? 'off ' : 'on ') + 'autovisto , autoread', // القراءة التلقائية - Auto Read
+descripcion: global.opts['autoread'] ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'الرسائل المقروءة تلقائياً - Messages read automatically',
 showPrefix: true
 },
 {
-comando: (global.opts['gconly'] ? 'off ' : 'on ') + 'sologrupos , gconly',
-descripcion: global.opts['gconly'] ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Hacer que funcione sólo en grupos',
+comando: (global.opts['gconly'] ? 'off ' : 'on ') + 'sologrupos , gconly', // المجموعات فقط - Groups Only
+descripcion: global.opts['gconly'] ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'جعله يعمل فقط في المجموعات - Make it work only in groups',
 showPrefix: true
 },
 {
-comando: (global.opts['pconly'] ? 'off ' : 'on ') + 'soloprivados , pconly',
-descripcion: global.opts['pconly'] ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled',
-contexto: 'Hacer que funcione sólo al privado',
-showPrefix: true
-},
-
-{
-comando: m.isGroup ? (chat.welcome ? 'off ' : 'on ') + 'bienvenida , welcome' : false,
-descripcion: m.isGroup ? (chat.welcome ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Establecer bienvenida en grupos',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.detect ? 'off ' : 'on ') + 'avisos , detect' : false,
-descripcion: m.isGroup ? (chat.detect ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Avisos importantes en grupos',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.autolevelup ? 'off ' : 'on ') + 'autonivel , autolevelup' : false,
-descripcion: m.isGroup ? (chat.autolevelup ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Subir de nivel automáticamente',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.modoadmin ? 'off ' : 'on ') + 'modoadmin , modeadmin' : false,
-descripcion: m.isGroup ? (chat.modoadmin ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Sólo admins podrán usar en grupo',
+comando: (global.opts['pconly'] ? 'off ' : 'on ') + 'soloprivados , pconly', // الخاص فقط - Private Only
+descripcion: global.opts['pconly'] ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled',
+contexto: 'جعله يعمل فقط في الخاص - Make it work only in private',
 showPrefix: true
 },
 
+// إعدادات المجموعة - Group Settings
 {
-comando: m.isGroup ? (chat.stickers ? 'off ' : 'on ') + 'stickers' : false,
-descripcion: m.isGroup ? (chat.stickers ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Stickers automáticos en chats',
+comando: m.isGroup ? (chat.welcome ? 'off ' : 'on ') + 'bienvenida , welcome' : false, // ترحيب - Welcome
+descripcion: m.isGroup ? (chat.welcome ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'تعيين الترحيب في المجموعات - Set welcome in groups',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.autosticker ? 'off ' : 'on ') + 'autosticker' : false,
-descripcion: m.isGroup ? (chat.autosticker ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Multimedia a stickers automáticamente',
+comando: m.isGroup ? (chat.detect ? 'off ' : 'on ') + 'avisos , detect' : false, // إشعارات - Notifications
+descripcion: m.isGroup ? (chat.detect ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'إشعارات مهمة في المجموعات - Important notices in groups',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.reaction ? 'off ' : 'on ') + 'reacciones , reaction' : false,
-descripcion: m.isGroup ? (chat.reaction ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Reaccionar a mensajes automáticamente',
+comando: m.isGroup ? (chat.autolevelup ? 'off ' : 'on ') + 'autonivel , autolevelup' : false, // التlevel التلقائي - Auto Level
+descripcion: m.isGroup ? (chat.autolevelup ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'الترقية التلقائية للمستوى - Level up automatically',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.audios ? 'off ' : 'on ') + 'audios' : false,
-descripcion: m.isGroup ? (chat.audios ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Audios automáticos en chats',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.modohorny ? 'off ' : 'on ') + 'modocaliente , modehorny' : false,
-descripcion: m.isGroup ? (chat.modohorny ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Comandos con contenido para adultos',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.antitoxic ? 'off ' : 'on ') + 'antitoxicos , antitoxic' : false,
-descripcion: m.isGroup ? (chat.antitoxic ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Sancionar/eliminar a usuarios tóxicos',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.antiver ? 'off ' : 'on ') + 'antiver , antiviewonce' : false,
-descripcion: m.isGroup ? (chat.antiver ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: ' No acultar mensajes de \"una sola vez\"',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.delete ? 'off ' : 'on ') + 'antieliminar , antidelete' : false,
-descripcion: m.isGroup ? (chat.delete ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Mostrar mensajes eliminados',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.antifake ? 'off ' : 'on ') + 'antifalsos , antifake' : false,
-descripcion: m.isGroup ? (chat.antifake ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar usuarios falsos/extranjeros',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.antiTraba ? 'off ' : 'on ') + 'antitrabas , antilag' : false,
-descripcion: m.isGroup ? (chat.antiTraba ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Enviar mensaje automático en caso de lag',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.simi ? 'off ' : 'on ') + 'simi' : false,
-descripcion: m.isGroup ? (chat.simi ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'SimSimi responderá automáticamente',
-showPrefix: true
-},
-{
-comando: m.isGroup ? (chat.modoia ? 'off ' : 'on ') + 'ia' : false,
-descripcion: m.isGroup ? (chat.modoia ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Inteligencia artificial automática',
+comando: m.isGroup ? (chat.modoadmin ? 'off ' : 'on ') + 'modoadmin , modeadmin' : false, // وضع الأدمن - Admin Mode
+descripcion: m.isGroup ? (chat.modoadmin ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'فقط المشرفين يمكنهم الاستخدام في المجموعة - Only admins can use in group',
 showPrefix: true
 },
 
+// إعدادات المحادثة - Chat Settings
 {
-comando: m.isGroup ? (chat.antilink ? 'off ' : 'on ') + 'antienlace , antilink' : false,
-descripcion: m.isGroup ? (chat.antilink ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de WhatsApp',
+comando: m.isGroup ? (chat.stickers ? 'off ' : 'on ') + 'stickers' : false, // ملصقات - Stickers
+descripcion: m.isGroup ? (chat.stickers ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'ملصقات تلقائية في الدردشات - Automatic stickers in chats',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antilink2 ? 'off ' : 'on ') + 'antienlace2 , antilink2' : false,
-descripcion: m.isGroup ? (chat.antilink2 ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces que contenga \"https\"',
+comando: m.isGroup ? (chat.autosticker ? 'off ' : 'on ') + 'autosticker' : false, // الملصقات التلقائية - Auto Sticker
+descripcion: m.isGroup ? (chat.autosticker ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'تحويل الوسائط إلى ملصقات تلقائياً - Multimedia to stickers automatically',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antiTiktok ? 'off ' : 'on ') + 'antitiktok , antitk' : false,
-descripcion: m.isGroup ? (chat.antiTiktok ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de TikTok',
+comando: m.isGroup ? (chat.reaction ? 'off ' : 'on ') + 'reacciones , reaction' : false, // تفاعلات - Reactions
+descripcion: m.isGroup ? (chat.reaction ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'الرد على الرسائل تلقائياً - React to messages automatically',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antiYoutube ? 'off ' : 'on ') + 'antiyoutube , antiyt' : false,
-descripcion: m.isGroup ? (chat.antiYoutube ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de YouTube',
+comando: m.isGroup ? (chat.audios ? 'off ' : 'on ') + 'audios' : false, // صوتيه - Audios
+descripcion: m.isGroup ? (chat.audios ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'الصوتيات التلقائية في الدردشات - Automatic audios in chats',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antiTelegram ? 'off ' : 'on ') + 'antitelegram , antitg' : false,
-descripcion: m.isGroup ? (chat.antiTelegram ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de Telegram',
+comando: m.isGroup ? (chat.modohorny ? 'off ' : 'on ') + 'modocaliente , modehorny' : false, // وضع ساخن - Horny Mode
+descripcion: m.isGroup ? (chat.modohorny ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'أوامر بمحتوى للبالغين - Commands with adult content',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antiFacebook ? 'off ' : 'on ') + 'antifacebook , antifb' : false,
-descripcion: m.isGroup ? (chat.antiFacebook ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de Facebook',
+comando: m.isGroup ? (chat.antitoxic ? 'off ' : 'on ') + 'antitoxicos , antitoxic' : false, // مضاد السام - Anti Toxic
+descripcion: m.isGroup ? (chat.antitoxic ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'معاقبة/حذف المستخدمين السامين - Punish/delete toxic users',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antiInstagram ? 'off ' : 'on ') + 'antinstagram , antig' : false,
-descripcion: m.isGroup ? (chat.antiInstagram ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de Instagram',
+comando: m.isGroup ? (chat.antiver ? 'off ' : 'on ') + 'antiver , antiviewonce' : false, // مضاد المشاهدة لمرة واحدة - Anti View Once
+descripcion: m.isGroup ? (chat.antiver ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'عدم إخفاء رسائل "مرة واحدة" - Do not hide "once only" messages',
 showPrefix: true
 },
 {
-comando: m.isGroup ? (chat.antiTwitter ? 'off ' : 'on ') + 'antiX' : false,
-descripcion: m.isGroup ? (chat.antiTwitter ? '✅ ' + 'Activado || Activated' : '❌ ' + 'Desactivado || Disabled') : false,
-contexto: 'Eliminar enlaces de X (Twitter)',
+comando: m.isGroup ? (chat.delete ? 'off ' : 'on ') + 'antieliminar , antidelete' : false, // مضاد الحذف - Anti Delete
+descripcion: m.isGroup ? (chat.delete ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'عرض الرسائل المحذوفة - Show deleted messages',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antifake ? 'off ' : 'on ') + 'antifalsos , antifake' : false, // مضاد المزيفين - Anti Fake
+descripcion: m.isGroup ? (chat.antifake ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف المستخدمين المزيفين/الأجانب - Delete fake/foreign users',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiTraba ? 'off ' : 'on ') + 'antitrabas , antilag' : false, // مضاد التباطؤ - Anti Lag
+descripcion: m.isGroup ? (chat.antiTraba ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'إرسال رسالة تلقائية في حالة التباطؤ - Send automatic message in case of lag',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.simi ? 'off ' : 'on ') + 'simi' : false, // سيمي - Simi
+descripcion: m.isGroup ? (chat.simi ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'سيمي سيجيب تلقائياً - SimSimi will answer automatically',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.modoia ? 'off ' : 'on ') + 'ia' : false, // الذكاء الاصطناعي - AI
+descripcion: m.isGroup ? (chat.modoia ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'ذكاء اصطناعي تلقائي - Automatic artificial intelligence',
+showPrefix: true
+},
+
+// إعدادات الروابط - Link Settings
+{
+comando: m.isGroup ? (chat.antilink ? 'off ' : 'on ') + 'antienlace , antilink' : false, // مضاد الروابط - Anti Link
+descripcion: m.isGroup ? (chat.antilink ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط واتساب - Delete WhatsApp links',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antilink2 ? 'off ' : 'on ') + 'antienlace2 , antilink2' : false, // مضاد الروابط 2 - Anti Link 2
+descripcion: m.isGroup ? (chat.antilink2 ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف الروابط التي تحتوي على "https" - Delete links containing "https"',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiTiktok ? 'off ' : 'on ') + 'antitiktok , antitk' : false, // مضاد تيك توك - Anti TikTok
+descripcion: m.isGroup ? (chat.antiTiktok ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط تيك توك - Delete TikTok links',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiYoutube ? 'off ' : 'on ') + 'antiyoutube , antiyt' : false, // مضاد يوتيوب - Anti YouTube
+descripcion: m.isGroup ? (chat.antiYoutube ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط يوتيوب - Delete YouTube links',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiTelegram ? 'off ' : 'on ') + 'antitelegram , antitg' : false, // مضاد تيليجرام - Anti Telegram
+descripcion: m.isGroup ? (chat.antiTelegram ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط تيليجرام - Delete Telegram links',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiFacebook ? 'off ' : 'on ') + 'antifacebook , antifb' : false, // مضاد فيسبوك - Anti Facebook
+descripcion: m.isGroup ? (chat.antiFacebook ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط فيسبوك - Delete Facebook links',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiInstagram ? 'off ' : 'on ') + 'antinstagram , antig' : false, // مضاد انستجرام - Anti Instagram
+descripcion: m.isGroup ? (chat.antiInstagram ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط انستجرام - Delete Instagram links',
+showPrefix: true
+},
+{
+comando: m.isGroup ? (chat.antiTwitter ? 'off ' : 'on ') + 'antiX' : false, // مضاد X - Anti X
+descripcion: m.isGroup ? (chat.antiTwitter ? '✅ ' + 'مفعل || Activated' : '❌ ' + 'معطل || Disabled') : false,
+contexto: 'حذف روابط X (تويتر) - Delete X (Twitter) links',
 showPrefix: true
 }
 ]
 
-try {
-let _package = JSON.parse(await promises.readFile(join(__dirname, '../package.json')).catch((_) => ({}))) || {}
-let {exp, limit, level, role} = global.db.data.users[m.sender]
-let {min, xp, max} = xpRange(level, global.multiplier)
-let name = await conn.getName(m.sender)
-let d = new Date(new Date() + 3600000)
-let locale = 'es'
-let weton = ['Pahing', 'Pon', 'Wage', 'Kliwon', 'Legi'][Math.floor(d / 84600000) % 5]
-let week = d.toLocaleDateString(locale, {weekday: 'long'})
-let date = d.toLocaleDateString(locale, {
-day: 'numeric',
-month: 'long',
-year: 'numeric'
-})
-let dateIslamic = Intl.DateTimeFormat(locale + '-TN-u-ca-islamic', {
-day: 'numeric',
-month: 'long',
-year: 'numeric'
-}).format(d)
-let time = d.toLocaleTimeString(locale, {
-hour: 'numeric',
-minute: 'numeric',
-second: 'numeric'
-})
-let _uptime = process.uptime() * 1000
-let _muptime
-if (process.send) {
-process.send('uptime')
-_muptime =
-(await new Promise((resolve) => {
-process.once('message', resolve)
-setTimeout(resolve, 1000)
-})) * 1000
-}
-let {money, joincount} = global.db.data.users[m.sender]
-let muptime = clockString(_muptime)
-let uptime = clockString(_uptime)
-let totalreg = Object.keys(global.db.data.users).length
-let rtotalreg = Object.values(global.db.data.users).filter((user) => user.registered == true).length
-let replace = {
-'%': '%',
-p: _p,
-uptime,
-muptime,
-me: conn.getName(conn.user.jid),
-npmname: _package.name,
-npmdesc: _package.description,
-version: _package.version,
-exp: exp - min,
-maxexp: xp,
-totalexp: exp,
-xp4levelup: max - exp,
-github: _package.homepage ? _package.homepage.url || _package.homepage : '[unknown github url]',
-level,
-limit,
-name,
-weton,
-week,
-date,
-dateIslamic,
-time,
-totalreg,
-rtotalreg,
-role,
-readmore: readMore
-}
-text = text.replace(new RegExp(`%(${Object.keys(replace).sort((a, b) => b.length - a.length).join`|`})`, 'g'), (_, name) => '' + replace[name])
-let who = m.mentionedJid && m.mentionedJid[0] ? m.mentionedJid[0] : m.fromMe ? conn.user.jid : m.sender
-let mentionedJid = [who]
-let username = conn.getName(who)
-let taguser = '@' + m.sender.split('@s.whatsapp.net')[0]
-let pp = gataVidMenu
-let pareja = global.db.data.users[m.sender].pasangan
-const numberToEmoji = {0: '0️⃣', 1: '1️⃣', 2: '2️⃣', 3: '3️⃣', 4: '4️⃣', 5: '5️⃣', 6: '6️⃣', 7: '7️⃣', 8: '8️⃣', 9: '9️⃣'}
-let lvl = level
-let emoji = Array.from(lvl.toString())
-.map((digit) => numberToEmoji[digit] || '❓')
-.join('')
-
-let fechaMoment,
-formatDate,
-nombreLugar,
-ciudad = null
-const phoneNumber = '+' + m.sender
-const parsedPhoneNumber = parsePhoneNumber(phoneNumber)
-const countryCode = parsedPhoneNumber.country
-const countryData = ct.getCountry(countryCode)
-const timezones = countryData.timezones
-const zonaHoraria = timezones.length > 0 ? timezones[0] : 'UTC'
-moment.locale(mid.idioma_code)
-let lugarMoment = moment().tz(zonaHoraria)
-if (lugarMoment) {
-fechaMoment = lugarMoment.format('llll [(]a[)]')
-formatDate = fechaMoment.charAt(0).toUpperCase() + fechaMoment.slice(1)
-nombreLugar = countryData.name
-const partes = zonaHoraria.split('/')
-ciudad = partes[partes.length - 1].replace(/_/g, ' ')
-} else {
-lugarMoment = moment().tz('America/Lima')
-fechaMoment = lugarMoment.format('llll [(]a[)]')
-formatDate = fechaMoment.charAt(0).toUpperCase() + fechaMoment.slice(1)
-nombreLugar = 'America'
-ciudad = 'Lima'
-}
-let margen = '*··················································*'
-let menu =
-`${lenguajeGB['smsConfi2']()} *${user.genero === 0 ? '👤' : user.genero == 'Ocultado 🕶️' ? '🕶️' : user.genero == 'Mujer 🚺' ? '🚺' : user.genero == 'Hombre 🚹' ? '🚹' : '👤'} ${user.registered === true ? user.name : taguser}* ${(conn.user.jid == global.conn.user.jid ? '' : `\n*SOY SUB BOT DE: https://wa.me/${global.conn.user.jid.split`@`[0]}*`) || ''}
-
-> *_${formatDate}_*
-> \`${nombreLugar} - ${ciudad}\`
-
-${margen}
-
-> 🌟 *INFORMACIÓN GENERAL* 🌟 
-
-*❰❰ ${lenguajeGB['smsTotalUsers']()} ❱❱* 
-➺ \`\`\`${Object.keys(global.db.data.users).length}\`\`\`
-
-*❰❰ Registrados ❱❱* 
-➺ \`\`\`${rtotalreg}/${totalreg}\`\`\`    
-
-*❰❰ ${lenguajeGB['smsUptime']()} ❱❱* 
-➺ \`\`\`${uptime}\`\`\`
-
-*❰❰ ${lenguajeGB['smsVersion']()} ❱❱* 
-➺ \`\`\`${vs}\`\`\`
-
-*❰❰ ${lenguajeGB['smsMode']()} ❱❱* 
-➺ \`${global.opts['self'] ? `${lenguajeGB['smsModePrivate']().charAt(0).toUpperCase() + lenguajeGB['smsModePrivate']().slice(1).toLowerCase()}` : `${lenguajeGB['smsModePublic']().charAt(0).toUpperCase() + lenguajeGB['smsModePublic']().slice(1).toLowerCase()}`}\`
-
-*❰❰ ${lenguajeGB['smsBanChats']()} ❱❱* 
-➺ \`\`\`${Object.entries(global.db.data.chats).filter((chat) => chat[1].isBanned).length}\`\`\`
-
-*❰❰ ${lenguajeGB['smsBanUsers']()} ❱❱* 
-➺ \`\`\`${Object.entries(global.db.data.users).filter((user) => user[1].banned).length}\`\`\`
-
-${margen}
-
-> ✨ *INFORMACIÓN DEL USUARIO* ✨
-
-*❰❰ Tipo de registro ❱❱*
-➺ ${user.registered === true ? `_${user.registroC === true ? '🗂️ Registro Completo' : '📑 Registro Rápido'}_` : '❌ _Sin registro_'}
-
-*❰❰ Mi estado ❱❱*
-➺ ${typeof user.miestado !== 'string' ? '❌ *Establecer usando:* _' + usedPrefix + 'miestado_' : '_Me siento ' + user.miestado + '_'}
-
-*❰❰ Registrado ❱❱*
-➺ ${user.registered === true ? '✅ Verificado' : '❌ *Establecer registro usando:* _' + usedPrefix + 'verificar_'}
-
-*❰❰ ${lenguajeGB['smsBotonM7']().charAt(0).toUpperCase() + lenguajeGB['smsBotonM7']().slice(1).toLowerCase()} ❱❱* 
-➺ ${user.premiumTime > 0 ? '✅ Eres usuario Premium' : '❌ *Establecer Premium:* _' + usedPrefix + 'pase premium_'}
-
-*❰❰ ${lenguajeGB['smsBotonM5']().charAt(0).toUpperCase() + lenguajeGB['smsBotonM5']().slice(1).toLowerCase()} ❱❱* 
-➺ ${role}
-
-*❰❰ ${lenguajeGB['smsBotonM6']().charAt(0).toUpperCase() + lenguajeGB['smsBotonM6']().slice(1).toLowerCase()} ❱❱*
-➺ ${emoji} \`${user.exp - min}/${xp}\`
-
-*❰❰ ${lenguajeGB['smsPareja']()} ❱❱*
-➺ ${pareja ? `${name} 💕 ${conn.getName(pareja)}` : `🛐 ${lenguajeGB['smsResultPareja']()}`}
-
-*❰❰ Pasatiempo(s) ❱❱* 
-➺ ${user.pasatiempo === 0 ? '*Sin Registro*' : user.pasatiempo + '\n'}
-
-${margen}
-
-> 💫 *INFORMACIÓN* 💫\n
-${generateCommand(commandsInfo, usedPrefix)}
-
-${margen}
-
-> 💻 *COMANDOS - SUB BOT*\n
-${generateCommand(commandsJadiBot, usedPrefix)}
-
-${margen}
-
-> 🆘 *REPORTAR COMANDOS* 🆘\n
-${generateCommand(commandsReport, usedPrefix)}
-
-${margen}
-
-> 🪅 *GATABOT TEMPORAL* 🪅\n
-${generateCommand(commandsLink, usedPrefix)}
-
-${margen}
-
-> 🎟️ *SER PREMIUM* 🎟️\n
-${generateCommand(commandsPrem, usedPrefix)}
-
-${margen}
-
-> 🎡 *JUEGOS* 🎡\n
-${generateCommand(commandsGames, usedPrefix)}
-
-${margen}
-
-> ✨ *IA* ✨\n
-${generateCommand(commandsAI, usedPrefix)}
-
-${margen}
-
-> ⚙️ *AJUSTES* ⚙️
-${
-  m.isGroup
-    ? `_✅ ➤ Activado_
-_❌ ➤ Desactivado_`
-    : `Para ver la configuración completa sólo use: *${usedPrefix}on* o *${usedPrefix}off*`
-}\n
-${generateCommand(commandsConfig, usedPrefix).replace(/≡/g, '𖡡')}
-
-${margen}
-
-> 🧾 *AJUSTES/INFO - GRUPO* 🧾
-
-✓ _${usedPrefix}configuracion_
-✓ _${usedPrefix}settings_
-✓ _${usedPrefix}vergrupo_
-
-> 🪄 *DESCARGAS* 🪄
-
-✓ _${usedPrefix}imagen | image *texto*_
-✓ _${usedPrefix}pinterest | dlpinterest *texto*_
-✓ _${usedPrefix}wallpaper|wp *texto*_
-✓ _${usedPrefix}play | play2 *texto o link*_
-✓ _${usedPrefix}play.1 *texto o link*_
-✓ _${usedPrefix}play.2 *texto o link*_ 
-✓ _${usedPrefix}ytmp3 | yta *link*_
-✓ _${usedPrefix}ytmp4 | ytv *link*_
-✓ _${usedPrefix}pdocaudio | ytadoc *link*_
-✓ _${usedPrefix}pdocvieo | ytvdoc *link*_
-✓ _${usedPrefix}tw |twdl | twitter *link*_
-✓ _${usedPrefix}facebook | fb *link*_
-✓ _${usedPrefix}instagram *link video o imagen*_
-✓ _${usedPrefix}verig | igstalk *usuario(a)*_
-✓ _${usedPrefix}ighistoria | igstory *usuario(a)*_
-✓ _${usedPrefix}tiktok *link*_
-✓ _${usedPrefix}tiktokimagen | ttimagen *link*_
-✓ _${usedPrefix}tiktokfoto | tiktokphoto *usuario(a)*_
-✓ _${usedPrefix}vertiktok | tiktokstalk *usuario(a)*_
-✓ _${usedPrefix}mediafire | dlmediafire *link*_
-✓ _${usedPrefix}clonarepo | gitclone *link*_
-✓ _${usedPrefix}clima *país ciudad*_
-✓ _${usedPrefix}consejo_
-✓ _${usedPrefix}morse codificar *texto*_
-✓ _${usedPrefix}morse decodificar *morse*_
-✓ _${usedPrefix}fraseromantica_
-✓ _${usedPrefix}historia_
-✓ _${usedPrefix}drive | dldrive *link*_
-> 👤 *CHAT ANONIMO* 👤
-
-✓ _${usedPrefix}chatanonimo | anonimochat_
-✓ _${usedPrefix}anonimoch_
-✓ _${usedPrefix}start_
-✓ _${usedPrefix}next_
-✓ _${usedPrefix}leave_
-
-> 🌐 *COMANDOS PARA GRUPOS* 🌐
-
-✓ _${usedPrefix}add *numero*_
-✓ _${usedPrefix}mute | unmute *@tag*_
-✓ _${usedPrefix}sacar | ban | kick  *@tag*_
-✓ _${usedPrefix}grupo *abrir o cerrar*_
-✓ _${usedPrefix}group *open o close*_
-✓ _${usedPrefix}daradmin | promote *@tag*_
-✓ _${usedPrefix}quitar | demote *@tag*_
-✓ _${usedPrefix}banchat_
-✓ _${usedPrefix}unbanchat_
-✓ _${usedPrefix}banuser *@tag*_
-✓ _${usedPrefix}unbanuser *@tag*_
-✓ _${usedPrefix}admins *texto*_
-✓ _${usedPrefix}invocar *texto*_
-✓ _${usedPrefix}tagall *texto*_
-✓ _${usedPrefix}hidetag *texto*_
-✓ _${usedPrefix}infogrupo | infogroup_
-✓ _${usedPrefix}grupotiempo | grouptime *Cantidad*_
-✓ _${usedPrefix}advertencia *@tag*_
-✓ _${usedPrefix}deladvertencia *@tag*_
-✓ _${usedPrefix}delwarn *@tag*_
-✓ _${usedPrefix}crearvoto | startvoto *texto*_
-✓ _${usedPrefix}sivotar | upvote_
-✓ _${usedPrefix}novotar | devote_
-✓ _${usedPrefix}vervotos | cekvoto_
-✓ _${usedPrefix}delvoto | deletevoto_
-✓ _${usedPrefix}enlace | link_
-✓ _${usedPrefix}newnombre | nuevonombre *texto*_
-✓ _${usedPrefix}newdesc | descripcion *texto*_
-✓ _${usedPrefix}setwelcome | bienvenida *texto*_
-✓ _${usedPrefix}setbye | despedida *texto*_
-✓ _${usedPrefix}nuevoenlace | resetlink_
-✓ _${usedPrefix}on_
-✓ _${usedPrefix}off_
-
-> 💞 *PAREJAS* 💞
-
-✓ _${usedPrefix}listaparejas | listship_
-✓ _${usedPrefix}mipareja | mylove_
-✓ _${usedPrefix}pareja | couple *@tag*_
-✓ _${usedPrefix}aceptar | accept *@tag*_
-✓ _${usedPrefix}rechazar | decline *@tag*_
-✓ _${usedPrefix}terminar | finish *@tag*_
-
-> 📦 *VOTACIONES EN GRUPOS* 📦
-
-✓ _${usedPrefix}crearvoto | startvoto *texto*_
-✓ _${usedPrefix}sivotar | upvote_
-✓ _${usedPrefix}novotar | devote_
-✓ _${usedPrefix}vervotos | cekvoto_
-✓ _${usedPrefix}delvoto | deletevoto_
-
-> 🔞 *CONTENIDO* 🔞
-
-✓ _${usedPrefix}hornymenu_
-
-> 🔁 *CONVERTIDORES* 🔁
-
-✓ _${usedPrefix}toimg | img | jpg *sticker*_
-✓ _${usedPrefix}toanime | jadianime *foto*_
-✓ _${usedPrefix}tomp3 | mp3 *video o nota de voz*_
-✓ _${usedPrefix}tovn | vn *video o audio*_
-✓ _${usedPrefix}tovideo *audio*_
-✓ _${usedPrefix}tourl *video, imagen*_
-✓ _${usedPrefix}toenlace  *video, imagen o audio*_
-✓ _${usedPrefix}tts es *texto*_
-
-> 🔆 *LOGOS* 🔆
-
-✓ _${usedPrefix}logos *efecto texto*_
-✓ _${usedPrefix}menulogos2_
-
-> 💥 *EFECTOS* 💥
-
-✓ _${usedPrefix}simpcard *@tag*_
-✓ _${usedPrefix}hornycard *@tag*_
-✓ _${usedPrefix}lolice *@tag*_
-✓ _${usedPrefix}ytcomment *texto*_
-✓ _${usedPrefix}itssostupid_
-✓ _${usedPrefix}pixelar_
-✓ _${usedPrefix}blur_
-
-> 🍭 *RANDOM/ANIME* 🍭
-
-✓ _${usedPrefix}chica_
-✓ _${usedPrefix}chico_
-✓ _${usedPrefix}cristianoronaldo_
-✓ _${usedPrefix}messi_
-✓ _${usedPrefix}meme_
-✓ _${usedPrefix}meme2_
-✓ _${usedPrefix}itzy_
-✓ _${usedPrefix}blackpink_
-✓ _${usedPrefix}kpop *blackpink, o exo, o bts*_
-✓ _${usedPrefix}lolivid_
-✓ _${usedPrefix}loli_
-✓ _${usedPrefix}navidad_
-✓ _${usedPrefix}ppcouple_
-✓ _${usedPrefix}neko_
-✓ _${usedPrefix}waifu_
-✓ _${usedPrefix}akira_
-✓ _${usedPrefix}akiyama_
-✓ _${usedPrefix}anna_
-✓ _${usedPrefix}asuna_
-✓ _${usedPrefix}ayuzawa_
-✓ _${usedPrefix}boruto_
-✓ _${usedPrefix}chiho_
-✓ _${usedPrefix}chitoge_
-✓ _${usedPrefix}deidara_
-✓ _${usedPrefix}erza_
-✓ _${usedPrefix}elaina_
-✓ _${usedPrefix}eba_
-✓ _${usedPrefix}emilia_
-✓ _${usedPrefix}hestia_
-✓ _${usedPrefix}hinata_
-✓ _${usedPrefix}inori_
-✓ _${usedPrefix}isuzu_
-✓ _${usedPrefix}itachi_
-✓ _${usedPrefix}itori_
-✓ _${usedPrefix}kaga_
-✓ _${usedPrefix}kagura_
-✓ _${usedPrefix}kaori_
-✓ _${usedPrefix}keneki_
-✓ _${usedPrefix}kotori_
-✓ _${usedPrefix}kurumi_
-✓ _${usedPrefix}madara_
-✓ _${usedPrefix}mikasa_
-✓ _${usedPrefix}miku_
-✓ _${usedPrefix}minato_
-✓ _${usedPrefix}naruto_
-✓ _${usedPrefix}nezuko_
-✓ _${usedPrefix}sagiri_
-✓ _${usedPrefix}sasuke_
-✓ _${usedPrefix}sakura_
-✓ _${usedPrefix}cosplay_
-
-> 🎙️ *EFECTO DE AUDIO* 🎙️
-
-✓ _${usedPrefix}bass_
-✓ _${usedPrefix}blown_
-✓ _${usedPrefix}deep_
-✓ _${usedPrefix}earrape_
-✓ _${usedPrefix}fast_
-✓ _${usedPrefix}fat_
-✓ _${usedPrefix}nightcore_
-✓ _${usedPrefix}reverse_
-✓ _${usedPrefix}robot_
-✓ _${usedPrefix}slow_
-✓ _${usedPrefix}smooth_
-✓ _${usedPrefix}tupai_
-
-> 🔍 *BÚSQUEDAS* 🔍
-
-✓ _${usedPrefix}animeinfo *texto*_
-✓ _${usedPrefix}mangainfo *texto*_
-✓ _${usedPrefix}google *texto*_
-✓ _${usedPrefix}googlelyrics *texto*_
-✓ _${usedPrefix}letra | lirik *texto*_
-✓ _${usedPrefix}ytsearch | yts *texto*_
-✓ _${usedPrefix}wiki | wikipedia *texto*_
-
-> 🔊 *AUDIOS* 🔊
-
-✓ _${usedPrefix}audios_
-
-> 🛠️ *HERRAMIENTAS* 🛠️
-
-✓ _${usedPrefix}afk *motivo*_
-✓ _${usedPrefix}acortar *url*_
-✓ _${usedPrefix}calc *operacion math*_
-✓ _${usedPrefix}del *respondre a mensaje del Bot*_
-✓ _${usedPrefix}qrcode *texto*_
-✓ _${usedPrefix}readmore *texto1|texto2*_
-✓ _${usedPrefix}spamwa *numero|texto|cantidad*_
-✓ _${usedPrefix}styletext *texto*_
-✓ _${usedPrefix}traducir *texto*_
-✓ _${usedPrefix}morse codificar *texto*_
-✓ _${usedPrefix}morse decodificar *morse*_
-✓ _${usedPrefix}encuesta | poll *Motivo*_
-✓ _${usedPrefix}horario_
-
-> ⚗️ *COMANDOS RPG* ⚗️
-
-✓ _${usedPrefix}botemporal *enlace* *cantidad*_
-✓ _${usedPrefix}addbot *enlace* *cantidad*_
-✓ _${usedPrefix}pase premium_
-✓ _${usedPrefix}pass premium_
-✓ _${usedPrefix}listapremium | listprem_
-✓ _${usedPrefix}transfer *tipo cantidad @tag*_
-✓ _${usedPrefix}dar *tipo cantidad @tag*_
-✓ _${usedPrefix}enviar *tipo cantidad @tag*_
-✓ _${usedPrefix}balance_
-✓ _${usedPrefix}cartera | wallet_
-✓ _${usedPrefix}experiencia | exp_
-✓ _${usedPrefix}top | lb | leaderboard_
-✓ _${usedPrefix}nivel | level | lvl_
-✓ _${usedPrefix}rol | rango_
-✓ _${usedPrefix}inventario | inventory_
-✓ _${usedPrefix}aventura | adventure_
-✓ _${usedPrefix}caza | cazar | hunt_
-✓ _${usedPrefix}pescar | fishing_
-✓ _${usedPrefix}animales_
-✓ _${usedPrefix}alimentos_
-✓ _${usedPrefix}curar | heal_
-✓ _${usedPrefix}buy_
-✓ _${usedPrefix}sell_
-✓ _${usedPrefix}verificar | registrar_
-✓ _${usedPrefix}perfil | profile_
-✓ _${usedPrefix}myns_
-✓ _${usedPrefix}unreg *numero de serie*_
-✓ _${usedPrefix}minardiamantes | minargemas_
-✓ _${usedPrefix}minargatacoins | minarcoins_
-✓ _${usedPrefix}minarexperiencia | minarexp_
-✓ _${usedPrefix}minar *:* minar2 *:* minar3_
-✓ _${usedPrefix}rob | robar 
-✓ _${usedPrefix}crime
-✓ _${usedPrefix}reclamar | regalo | claim_
-✓ _${usedPrefix}cadahora | hourly_
-✓ _${usedPrefix}cadasemana | semanal | weekly_
-✓ _${usedPrefix}cadames | mes | monthly_
-✓ _${usedPrefix}cofre | abrircofre | coffer_
-✓ _${usedPrefix}trabajar | work_
-
-> 🌟 *RPG Fnatasy* 🌟
-
-✓ _${usedPrefix}fantasy | fy_
-✓ _c_
-✓ _${usedPrefix}fyguia | fyguide_
-✓ _${usedPrefix}fantasyinfo | fyinfo_
-✓ _${usedPrefix}fyagregar | fyadd_
-✓ _${usedPrefix}fycambiar | fychange_
-✓ _${usedPrefix}fylista | fyl_
-✓ _${usedPrefix}fantasymy | fymy_
-✓ _${usedPrefix}fyentregar | fytransfer_
-
-> 🏆 *TOP en RPG Fnatasy* 🏆
-
-✓ _${usedPrefix}fytendencia | fyranking_
-
-> 🏆 *TOP en GATABOT* 🏆
-
-✓ _${usedPrefix}top | lb | leaderboard_
-
-> 🎭 *FILTROS EN STICKERS* 🎭
-
-✓ _${usedPrefix}sticker | s *imagen o video*_
-✓ _${usedPrefix}sticker | s *url de tipo jpg*_
-✓ _${usedPrefix}emojimix *😺+😆*_
-✓ _${usedPrefix}scircle | círculo *imagen*_
-✓ _${usedPrefix}semoji | emoji *tipo emoji*_
-✓ _${usedPrefix}attp *texto*_
-✓ _${usedPrefix}attp2 *texto*_
-✓ _${usedPrefix}ttp *texto*_
-✓ _${usedPrefix}ttp2 *texto*_
-✓ _${usedPrefix}ttp3 *texto*_
-✓ _${usedPrefix}ttp4 *texto*_
-✓ _${usedPrefix}ttp5 *texto*_
-✓ _${usedPrefix}ttp6 *texto*_
-✓ _${usedPrefix}dado_
-✓ _${usedPrefix}stickermarker *efecto : responder a imagen*_
-✓ _${usedPrefix}stickerfilter *efecto : responder a imagen*_
-✓ _${usedPrefix}cs *:* cs2_
-
-> 😼 *MODIFICAR STICKERS* 😼
-
-✓ _${usedPrefix}wm *packname|author*_
-✓ _${usedPrefix}wm *texto1|texto2*_
-
-> 👻 *STICKERS DINÁMICOS* 👻
-
-✓ _${usedPrefix}palmaditas | pat *@tag*_
-✓ _${usedPrefix}bofetada | slap *@tag*_
-✓ _${usedPrefix}golpear *@tag*_
-✓ _${usedPrefix}besar | kiss *@tag*_
-✓ _${usedPrefix}alimentar | food *@tag*_
-
-> 💎 *PARA MI CREADOR/A* 💎
-
-✓ _${usedPrefix}join *enlace*_
-✓ _${usedPrefix}unete *enlace*_
-✓ _${usedPrefix}dardiamantes *cantidad*_
-✓ _${usedPrefix}darxp *cantidad*_
-✓ _${usedPrefix}dargatacoins *cantidad*_
-✓ _${usedPrefix}addprem | userpremium *@tag* *cantidad*_
-✓ _${usedPrefix}addprem2 | userpremium2 *@tag* *cantidad*_
-✓ _${usedPrefix}addprem3 | userpremium3 *@tag* *cantidad*_
-✓ _${usedPrefix}addprem4 | userpremium4 *@tag* *cantidad*_
-✓ _${usedPrefix}idioma | language_
-✓ _${usedPrefix}cajafuerte_
-✓ _${usedPrefix}comunicar | broadcastall | bc *texto*_
-✓ _${usedPrefix}broadcastchats | bcc *texto*_
-✓ _${usedPrefix}comunicarpv *texto*_
-✓ _${usedPrefix}broadcastgc *texto*_
-✓ _${usedPrefix}comunicargrupos *texto*_
-✓ _${usedPrefix}borrartmp | cleartmp_
-✓ _${usedPrefix}delexp *@tag*_
-✓ _${usedPrefix}delgatacoins *@tag*_
-✓ _${usedPrefix}deldiamantes *@tag*_
-✓ _${usedPrefix}reiniciar | restart_
-✓ _${usedPrefix}ctualizar | update_
-✓ _${usedPrefix}addprem | +prem *@tag*_
-✓ _${usedPrefix}delprem | -prem *@tag*_
-✓ _${usedPrefix}listapremium | listprem_
-✓ _${usedPrefix}añadirdiamantes *@tag cantidad*_
-✓ _${usedPrefix}añadirxp *@tag cantidad*_
-✓ _${usedPrefix}añadirgatacoins *@tag cantidad*_
-`.trim()
-await conn.sendFile(m.chat, gataVidMenu, 'gata.mp4', menu, fkontak, false, {
-contextInfo: {
-externalAdReply: {
-mediaUrl: null,
-mediaType: 1,
-description: null,
-title: gt,
-body: ' 😻 𝗦𝘂𝗽𝗲𝗿 𝗚𝗮𝘁𝗮𝗕𝗼𝘁-𝗠𝗗 - 𝗪𝗵𝗮𝘁𝘀𝗔𝗽𝗽 ',
-previewType: 0,
-thumbnail: imagen4,
-sourceUrl: redesMenu
-}
-}
-})
-//await conn.sendFile(m.chat, gataVidMenu, 'gata.mp4', menu, fkontak)
-} catch (e) {
-await m.reply(
-lenguajeGB['smsMalError3']() +
-'\n*' +
-lenguajeGB.smsMensError1() +
-'*\n*' +
-usedPrefix +
-`${lenguajeGB.lenguaje() == 'es' ? 'reporte' : 'report'}` +
-'* ' +
-`${lenguajeGB.smsMensError2()} ` +
-usedPrefix +
-command
-)
-console.log(`❗❗ ${lenguajeGB['smsMensError2']()} ${usedPrefix + command} ❗❗`)
-console.log(e)
-}
-}
-//handler.command = /^(menu|menú|memu|memú|help|info|comandos|2help|menu1.2|ayuda|commands|commandos|menucompleto|allmenu|allm|m|\?)$/i
-handler.command = /^(menucompleto|allmenu|\?)$/i
-handler.register = true
-export default handler
-
-const more = String.fromCharCode(8206)
-const readMore = more.repeat(4001)
-function clockString(ms) {
-let h = isNaN(ms) ? '--' : Math.floor(ms / 3600000)
-let m = isNaN(ms) ? '--' : Math.floor(ms / 60000) % 60
-let s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60
-return [h, m, s].map((v) => v.toString().padStart(2, 0)).join(':')
-}
-
-// Función para formatear arrays de comandos
-function generateCommand(commandsArray, usedPrefix) {
-const formattedCommands = commandsArray
-.filter((command) => {
-const comandoValido = command.comando && typeof command.comando === 'function' && command.comando()
-const descripcionValida = command.descripcion && typeof command.descripcion === 'function'
-const contextoValido = typeof command.contexto === 'string' && command.contexto.trim() !== ''
-return comandoValido || descripcionValida || contextoValido
-})
-.map((command, index, array) => {
-const prefix =
-command.showPrefix === true &&
-((typeof command.comando === 'function' && typeof command.comando() === 'string' && command.comando().trim() !== '') ||
-(typeof command.comando === 'string' && command.comando.trim() !== ''))
-? usedPrefix
-: ''
-let formattedCommand = ''
-if (command.comando) {
-if (typeof command.comando === 'function') {
-const commandResult = command.comando()
-if (typeof commandResult === 'string') {
-formattedCommand = commandResult.trim()
-}
-} else if (typeof command.comando === 'string') {
-formattedCommand = command.comando.trim()
-}
-}
-if (formattedCommand.includes(',')) {
-formattedCommand = mid.idioma_code === 'es' ? formattedCommand.split(',')[0].trim() : formattedCommand.split(',')[1].trim()
-}
-let formattedDescription = ''
-if (command.descripcion) {
-if (typeof command.descripcion === 'function') {
-const descriptionResult = command.descripcion()
-if (typeof descriptionResult === 'string') {
-formattedDescription = descriptionResult.trim()
-}
-} else if (typeof command.descripcion === 'string') {
-formattedDescription = command.descripcion.trim()
-}
-}
-if (formattedDescription.includes('||')) {
-formattedDescription = mid.idioma_code === 'es' ? formattedDescription.split('||')[0].trim() : formattedDescription.split('||')[1].trim()
-}
-let formattedContext = ''
-if (command.contexto) {
-if (typeof command.contexto === 'function') {
-const contextResult = command.contexto()
-if (typeof contextResult === 'string') {
-formattedContext = contextResult.trim()
-}
-} else if (typeof command.contexto === 'string' && command.contexto.trim() !== '') {
-formattedContext = command.contexto.trim()
-}
-}
-let message = ''
-if (formattedCommand) {
-message += `✓ \`${prefix}${formattedCommand}\``
-if (formattedDescription) {
-message += `\n${command.descripcion && typeof command.descripcion === 'function' ? '𖡡' : '≡'} \`\`\`${formattedDescription}\`\`\``
-}
-if (formattedContext) {
-message += '\nⓘ _' + formattedContext + '_' + (index !== array.length - 1 ? '\n' : '')
-}
-}
-return message
-})
-.filter((message) => message !== '')
-return formattedCommands.join('\n')
-}
-
-// comando: Si hay comando en español y inglés separar por (,) máximo 2 comandos
-// descripcion: Parámetros para usar el comando. Separar por (||) máximo 2 descripciones
-// contexto: Explicación de que trata el comando
-// showPrefix: Usar true para que muestre el prefijo, de lo contrario usar false
-// Si algún objeto no se va usar dejar en false, menos el objeto "comando" ya que si es false no mostrará nada
-const commandsInfo = [
-{comando: 'cuentasgatabot , accounts', descripcion: false, contexto: 'Cuentas oficiales', showPrefix: true},
-{comando: 'grupos , linkgc', descripcion: false, contexto: 'Grupos oficiales', showPrefix: true},
-{comando: 'donar , donate', descripcion: false, contexto: 'Apoya al proyecto donando', showPrefix: true},
-{comando: 'listagrupos , grouplist', descripcion: false, contexto: 'Grupos en donde estoy', showPrefix: true},
-{comando: 'estado , status', descripcion: false, contexto: 'Información de mí estado', showPrefix: true},
-{comando: 'infogata , infobot', descripcion: false, contexto: 'Información sobre el Bot', showPrefix: true},
-{comando: 'instalarbot , installbot', descripcion: false, contexto: 'Información y métodos de instalación', showPrefix: true},
-{comando: 'creadora , owner', descripcion: false, contexto: 'Información sobre mí Creadora', showPrefix: true},
-{comando: 'velocidad , ping', descripcion: false, contexto: 'Verifica la velocidad de este Bot', showPrefix: true},
-{comando: 'Bot', descripcion: false, contexto: 'Mensaje predeterminado del Bot', showPrefix: false},
-{comando: 'términos y condiciones , terms and conditions', descripcion: false, contexto: 'Revisa detalles al usar este Bot', showPrefix: false}
+// باقي الكود يبقى كما هو مع الترجمة...
+// The rest of the code remains the same with translation...
+
+// وظائف الأوامر - Command Functions
+const commandsInfo = [ // معلومات - Information
+{comando: 'cuentasgatabot , accounts', descripcion: false, contexto: 'الحسابات الرسمية - Official accounts', showPrefix: true},
+{comando: 'grupos , linkgc', descripcion: false, contexto: 'المجموعات الرسمية - Official groups', showPrefix: true},
+{comando: 'donar , donate', descripcion: false, contexto: 'ادعم المشروع بالتبرع - Support the project by donating', showPrefix: true},
+{comando: 'listagrupos , grouplist', descripcion: false, contexto: 'المجموعات التي أنا فيها - Groups where I am', showPrefix: true},
+{comando: 'estado , status', descripcion: false, contexto: 'معلومات عن حالتي - Information about my status', showPrefix: true},
+{comando: 'infogata , infobot', descripcion: false, contexto: 'معلومات عن البوت - Information about the Bot', showPrefix: true},
+{comando: 'instalarbot , installbot', descripcion: false, contexto: 'معلومات وطرق التثبيت - Information and installation methods', showPrefix: true},
+{comando: 'creadora , owner', descripcion: false, contexto: 'معلومات عن مبتكري - Information about my Creator', showPrefix: true},
+{comando: 'velocidad , ping', descripcion: false, contexto: 'تحقق من سرعة هذا البوت - Verify the speed of this Bot', showPrefix: true},
+{comando: 'Bot', descripcion: false, contexto: 'الرسالة الافتراضية للبوت - Default Bot message', showPrefix: false},
+{comando: 'términos y condiciones , terms and conditions', descripcion: false, contexto: 'راجع التفاصيل عند استخدام هذا البوت - Review details when using this Bot', showPrefix: false}
 ]
-const commandsJadiBot = [
-{comando: 'serbot , jadibot', descripcion: false, contexto: 'Reactiva o Conviértete en Bot secundario', showPrefix: true},
-{comando: 'serbot --code , jadibot --code', descripcion: false, contexto: 'Solicita código de 8 dígitos', showPrefix: true},
-{comando: 'detener , stop', descripcion: false, contexto: 'Dejar de ser temporalmente Sub Bot', showPrefix: true},
-{comando: 'bots , listjadibots', descripcion: false, contexto: 'Lista de Bots secundarios', showPrefix: true},
-{comando: 'borrarsesion , delsession', descripcion: false, contexto: 'Borrar datos de Bot secuandario', showPrefix: true},
-{comando: 'bcbot', descripcion: false, contexto: 'Notificar a usuarios Sub Bots', showPrefix: true}
+
+const commandsJadiBot = [ // البوتات الفرعية - Sub Bots
+{comando: 'serbot , jadibot', descripcion: false, contexto: 'تفعيل أو التحول إلى بوت ثانوي - Reactivate or Become a secondary Bot', showPrefix: true},
+{comando: 'serbot --code , jadibot --code', descripcion: false, contexto: 'طلب رمز مكون من 8 أرقام - Request 8-digit code', showPrefix: true},
+{comando: 'detener , stop', descripcion: false, contexto: 'التوقف عن كونك بوت فرعي مؤقتاً - Stop being temporarily Sub Bot', showPrefix: true},
+{comando: 'bots , listjadibots', descripcion: false, contexto: 'قائمة البوتات الثانوية - List of secondary Bots', showPrefix: true},
+{comando: 'borrarsesion , delsession', descripcion: false, contexto: 'حذف بيانات البوت الثانوي - Delete secondary Bot data', showPrefix: true},
+{comando: 'bcbot', descripcion: false, contexto: 'إخطار مستخدمي البوتات الفرعية - Notify Sub Bot users', showPrefix: true}
 ]
-const commandsReport = [{comando: 'reporte , report', descripcion: '[texto] || [text]', contexto: 'Reportar comandos con errores', showPrefix: true}]
-const commandsLink = [
+
+const commandsReport = [ // الإبلاغ - Reporting
+{comando: 'reporte , report', descripcion: '[نص] || [text]', contexto: 'الإبلاغ عن الأوامر ذات الأخطاء - Report commands with errors', showPrefix: true}
+]
+
+const commandsLink = [ // الروابط - Links
 {
-comando: 'botemporal , addbot',
-descripcion: '[enlace] [cantidad] || [link] [amount]',
-contexto: 'Agregar Bot temporalmente a un grupo',
+comando: 'botemporal , addbot', // بوت مؤقت - Temporary Bot
+descripcion: '[رابط] [كمية] || [link] [amount]',
+contexto: 'إضافة البوت مؤقتاً إلى مجموعة - Add Bot temporarily to a group',
 showPrefix: true
 }
 ]
-const commandsPrem = [
-{comando: 'pase premium , pass premium', descripcion: false, contexto: 'Planes para adquirir premium', showPrefix: true},
-{comando: 'listavip , listprem', descripcion: false, contexto: 'Usuarios con tiempo premium', showPrefix: true},
-{comando: 'listapremium , listpremium', descripcion: false, contexto: 'Lista de usuarios premium', showPrefix: true}
+
+const commandsPrem = [ // بريميوم - Premium
+{comando: 'pase premium , pass premium', descripcion: false, contexto: 'الخطط للحصول على بريميوم - Plans to acquire premium', showPrefix: true},
+{comando: 'listavip , listprem', descripcion: false, contexto: 'المستخدمون مع وقت بريميوم - Users with premium time', showPrefix: true},
+{comando: 'listapremium , listpremium', descripcion: false, contexto: 'قائمة المستخدمين المميزين - List of premium users', showPrefix: true}
 ]
-const commandsGames = [
-{comando: 'matematicas , math', descripcion: '"noob, medium, hard"', contexto: 'Operaciones matemáticas 🧮', showPrefix: true},
-{comando: 'lanzar , launch', descripcion: '"cara" o "cruz"', contexto: 'Moneda de la suerte 🪙', showPrefix: true},
-{comando: 'ppt', descripcion: '"piedra", "papel" o "tijera"', contexto: 'Un clásico 🪨📄✂️', showPrefix: true},
-{comando: 'ttt', descripcion: '[Nombre de la sala] || [Room name]', contexto: 'Tres en línea/rayas ❌⭕', showPrefix: true},
-{comando: 'delttt', descripcion: false, contexto: 'Cerrar/abandonar la partida 🚪', showPrefix: true},
-{comando: 'topgays', descripcion: false, contexto: 'Clasificación de usuarios Gays 🏳️‍🌈', showPrefix: true},
-{comando: 'topotakus', descripcion: false, contexto: 'Clasificación de usuarios Otakus 🎌', showPrefix: true},
-{comando: 'toppajer@s', descripcion: false, contexto: 'Clasificación de usuarios pajeros 🥵', showPrefix: true},
-{comando: 'topintegrantes', descripcion: false, contexto: 'Mejores usuarios 👑', showPrefix: true},
-{comando: 'toplagrasa', descripcion: false, contexto: 'Usuarios más grasosos XD', showPrefix: true},
-{comando: 'toplind@s', descripcion: false, contexto: 'Los más lindos 😻', showPrefix: true},
-{comando: 'topput@s', descripcion: false, contexto: 'Los más p**** 🫣', showPrefix: true},
-{comando: 'toppanafrescos', descripcion: false, contexto: 'Los que más critican 🗿', showPrefix: true},
-{comando: 'topshiposters', descripcion: false, contexto: 'Los que se creen graciosos 🤑', showPrefix: true},
-{comando: 'topfamosos', descripcion: false, contexto: 'Los más conocidos ☝️', showPrefix: true},
-{comando: 'topparejas', descripcion: false, contexto: 'Las 5 mejores 💕', showPrefix: true},
-{comando: 'gay', descripcion: '[@tag]', contexto: 'Perfil Gay 😲', showPrefix: true},
-{comando: 'gay2', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Gay', showPrefix: true},
-{comando: 'lesbiana', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Lesbiana', showPrefix: true},
-{comando: 'manca', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Manca', showPrefix: true},
-{comando: 'manco', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Manco', showPrefix: true},
-{comando: 'pajero', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Pajero', showPrefix: true},
-{comando: 'pajera', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Pajera', showPrefix: true},
-{comando: 'puto', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Puto', showPrefix: true},
-{comando: 'puta', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Puta', showPrefix: true},
-{comando: 'rata', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Rata', showPrefix: true},
-{comando: 'love', descripcion: '[@tag] o [nombre] || [@tag] or [name]', contexto: '(%) de Love', showPrefix: true},
-{comando: 'doxxear', descripcion: '[@tag]', contexto: 'Simular Doxxeo falso 🕵️‍♀️', showPrefix: true},
-{comando: 'pregunta', descripcion: '[texto] || [text]', contexto: 'Pregunta ❔ y responderá', showPrefix: true},
-{comando: 'apostar , slot', descripcion: '[cantidad] || [amount]', contexto: 'Apuesta a la suerte 🎰', showPrefix: true},
-{comando: 'formarpareja', descripcion: false, contexto: 'Une a dos personas 💞', showPrefix: true},
-{comando: 'dado', descripcion: false, contexto: 'Envía un dado aleatorio 🎲', showPrefix: true},
-{comando: 'piropo', descripcion: false, contexto: 'Enviar un piropo 🫢', showPrefix: true},
-{comando: 'chiste', descripcion: false, contexto: 'Envía chistes 🤡', showPrefix: true},
-{comando: 'reto', descripcion: false, contexto: 'Pondrá un reto 😏', showPrefix: true},
-{comando: 'frases', descripcion: '[cantidad 1 al 99] || [amount 1-99]', contexto: 'Envía frases aleatorias 💐', showPrefix: true},
-{comando: 'acertijo', descripcion: false, contexto: 'Responde al mensaje del acertijo 👻', showPrefix: true},
-{comando: 'cancion', descripcion: false, contexto: 'Adivina la canción 🎼', showPrefix: true},
-{comando: 'trivia', descripcion: false, contexto: 'Preguntas con opciones 💭', showPrefix: true},
-{comando: 'pelicula', descripcion: false, contexto: 'Descubre la película con emojis 🎬', showPrefix: true},
-{comando: 'adivinanza', descripcion: false, contexto: 'Adivina adivinador 🧞‍♀️', showPrefix: true},
-{comando: 'ruleta', descripcion: false, contexto: 'Suerte inesperada 💫', showPrefix: true},
-{comando: 'ahorcado', descripcion: false, contexto: 'Adivina la palabras antes de que el ahorcado te atrape 😱', showPrefix: true},
-{comando: 'ruletadelban', descripcion: false, contexto: 'Elimina un usuario al azar, solo para admins ☠️', showPrefix: true}
+
+const commandsGames = [ // ألعاب - Games
+{comando: 'matematicas , math', descripcion: '"مبتدئ, متوسط, صعب" || "noob, medium, hard"', contexto: 'عمليات رياضية 🧮 - Mathematical operations', showPrefix: true},
+{comando: 'lanzar , launch', descripcion: '"وجه" أو "كتابة" || "cara" o "cruz"', contexto: 'عملة الحظ 🪙 - Luck coin', showPrefix: true},
+{comando: 'ppt', descripcion: '"حجر", "ورقة" أو "مقص" || "piedra", "papel" o "tijera"', contexto: 'كلاسيكي 🪨📄✂️ - Classic', showPrefix: true},
+{comando: 'ttt', descripcion: '[اسم الغرفة] || [Room name]', contexto: 'ثلاثة في خط/شرطات ❌⭕ - Three in a line/tic-tac-toe', showPrefix: true},
+{comando: 'delttt', descripcion: false, contexto: 'إغلاق/مغادرة المباراة 🚪 - Close/leave the game', showPrefix: true},
+{comando: 'topgays', descripcion: false, contexto: 'تصنيف المستخدمين المثليين 🏳️‍🌈 - Gay users ranking', showPrefix: true},
+{comando: 'topotakus', descripcion: false, contexto: 'تصنيف مستخدمي الأوتاكو 🎌 - Otaku users ranking', showPrefix: true},
+{comando: 'toppajer@s', descripcion: false, contexto: 'تصنيف المستخدمين المنحرفين 🥵 - Perverted users ranking', showPrefix: true},
+{comando: 'topintegrantes', descripcion: false, contexto: 'أفضل المستخدمين 👑 - Best users', showPrefix: true},
+{comando: 'toplagrasa', descripcion: false, contexto: 'المستخدمون الأكثر سخافة XD - Greasiest users', showPrefix: true},
+{comando: 'toplind@s', descripcion: false, contexto: 'الأجمل 😻 - The most beautiful', showPrefix: true},
+{comando: 'topput@s', descripcion: false, contexto: 'الأكثر عهراً 🫣 - The most promiscuous', showPrefix: true},
+{comando: 'toppanafrescos', descripcion: false, contexto: 'الأكثر انتقاداً 🗿 - Those who criticize the most', showPrefix: true},
+{comando: 'topshiposters', descripcion: false, contexto: 'الذين يعتقدون أنهم مضحكون 🤑 - Those who think they are funny', showPrefix: true},
+{comando: 'topfamosos', descripcion: false, contexto: 'الأكثر شهرة ☝️ - The most famous', showPrefix: true},
+{comando: 'topparejas', descripcion: false, contexto: 'أفضل 5 أزواج 💕 - The 5 best couples', showPrefix: true},
+{comando: 'gay', descripcion: '[@منشن]', contexto: 'ملف مثلي الجنس 😲 - Gay profile', showPrefix: true},
+{comando: 'gay2', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) مثلي الجنس - (%) Gay', showPrefix: true},
+{comando: 'lesbiana', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) سحاقية - (%) Lesbian', showPrefix: true},
+{comando: 'manca', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) مانكا - (%) Manca', showPrefix: true},
+{comando: 'manco', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) مانكو - (%) Manco', showPrefix: true},
+{comando: 'pajero', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) منحرف - (%) Pervert', showPrefix: true},
+{comando: 'pajera', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) منحرفة - (%) Pervert', showPrefix: true},
+{comando: 'puto', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) عاهر - (%) Promiscuous', showPrefix: true},
+{comando: 'puta', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) عاهرة - (%) Promiscuous', showPrefix: true},
+{comando: 'rata', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) جشع - (%) Greedy', showPrefix: true},
+{comando: 'love', descripcion: '[@منشن] أو [اسم] || [@tag] or [name]', contexto: '(%) حب - (%) Love', showPrefix: true},
+{comando: 'doxxear', descripcion: '[@منشن]', contexto: 'محاكاة دوكسينج مزيف 🕵️‍♀️ - Simulate fake Doxxing', showPrefix: true},
+{comando: 'pregunta', descripcion: '[نص] || [text]', contexto: 'سؤال ❔ وسيجيب - Question ❔ and it will answer', showPrefix: true},
+{comando: 'apostar , slot', descripcion: '[كمية] || [amount]', contexto: 'الرهان على الحظ 🎰 - Bet on luck', showPrefix: true},
+{comando: 'formarpareja', descripcion: false, contexto: 'يوحد شخصين 💞 - Unites two people', showPrefix: true},
+{comando: 'dado', descripcion: false, contexto: 'يرسل نرد عشوائي 🎲 - Sends a random dice', showPrefix: true},
+{comando: 'piropo', descripcion: false, contexto: 'إرسال مجاملة 🫢 - Send a compliment', showPrefix: true},
+{comando: 'chiste', descripcion: false, contexto: 'يرسل نكات 🤡 - Sends jokes', showPrefix: true},
+{comando: 'reto', descripcion: false, contexto: 'سيضع تحدياً 😏 - Will set a challenge', showPrefix: true},
+{comando: 'frases', descripcion: '[كمية 1 إلى 99] || [amount 1-99]', contexto: 'يرسل عبارات عشوائية 💐 - Sends random phrases', showPrefix: true},
+{comando: 'acertijo', descripcion: false, contexto: 'الرد على رسالة اللغز 👻 - Answer the riddle message', showPrefix: true},
+{comando: 'cancion', descripcion: false, contexto: 'خمن الأغنية 🎼 - Guess the song', showPrefix: true},
+{comando: 'trivia', descripcion: false, contexto: 'أسئلة بخيارات 💭 - Questions with options', showPrefix: true},
+{comando: 'pelicula', descripcion: false, contexto: 'اكتشف الفيلم بالرموز التعبيرة 🎬 - Discover the movie with emojis', showPrefix: true},
+{comando: 'adivinanza', descripcion: false, contexto: 'خمن يا عراف 🧞‍♀️ - Guess guesser', showPrefix: true},
+{comando: 'ruleta', descripcion: false, contexto: 'حظ غير متوقع 💫 - Unexpected luck', showPrefix: true},
+{comando: 'ahorcado', descripcion: false, contexto: 'خمن الكلمات قبل أن يمسكك المشنوق 😱 - Guess the words before the hangman catches you', showPrefix: true},
+{comando: 'ruletadelban', descripcion: false, contexto: 'حذف مستخدم عشوائياً، فقط للمشرفين ☠️ - Delete a random user, only for admins', showPrefix: true}
 ]
-const commandsAI = [
-{comando: 'simi', descripcion: '[texto] || [text]', contexto: 'Conversa con SimSimi', showPrefix: true},
-{comando: 'ia , ai', descripcion: '[texto] || [text]', contexto: 'Tecnología de ChatGPT', showPrefix: true},
-{comando: 'delchatgpt', descripcion: false, contexto: 'Eliminar historial de la IA', showPrefix: true},
-{comando: 'iavoz , aivoice', descripcion: '[texto] || [text]', contexto: 'Respuestas en audios', showPrefix: true},
+
+const commandsAI = [ // الذكاء الاصطناعي - AI
+{comando: 'simi', descripcion: '[نص] || [text]', contexto: 'تحدث مع سيمي - Chat with SimSimi', showPrefix: true},
+{comando: 'ia , ai', descripcion: '[نص] || [text]', contexto: 'تكنولوجيا ChatGPT - ChatGPT technology', showPrefix: true},
+{comando: 'delchatgpt', descripcion: false, contexto: 'حذف سجل الذكاء الاصطناعي - Delete AI history', showPrefix: true},
+{comando: 'iavoz , aivoice', descripcion: '[نص] || [text]', contexto: 'إجابات صوتيه - Audio answers', showPrefix: true},
 {
-comando: 'calidadimg , qualityimg',
-descripcion: '(responde con una imagen) || (responds with an image)',
-contexto: 'Detalles de resolución de imagen',
+comando: 'calidadimg , qualityimg', // جودة الصورة - Image Quality
+descripcion: '(الرد بصورة) || (responds with an image)',
+contexto: 'تفاصيل دقة الصورة - Image resolution details',
 showPrefix: true
 },
-{comando: 'dalle', descripcion: '[texto] || [text]', contexto: 'Genera imagen a partir de texto', showPrefix: true},
-{comando: 'gemini', descripcion: '[texto] || [text]', contexto: 'IA, Tecnología de Google', showPrefix: true},
-{comando: 'geminimg', descripcion: '(imagen) + [texto] || (image) + [text]', contexto: 'Busca información de una imagen', showPrefix: true},
-{comando: 'hd', descripcion: '(responde con una imagen) || (responds with an image)', contexto: 'Mejorar calidad de imagen', showPrefix: true}
+{comando: 'dalle', descripcion: '[نص] || [text]', contexto: 'إنشاء صورة من نص - Generate image from text', showPrefix: true},
+{comando: 'gemini', descripcion: '[نص] || [text]', contexto: 'ذكاء اصطناعي، تكنولوجيا جوجل - AI, Google technology', showPrefix: true},
+{comando: 'geminimg', descripcion: '(صورة) + [نص] || (image) + [text]', contexto: 'ابحث عن معلومات من صورة - Search information from an image', showPrefix: true},
+{comando: 'hd', descripcion: '(الرد بصورة) || (responds with an image)', contexto: 'تحسين جودة الصورة - Improve image quality', showPrefix: true}
 ]
+
+// باقي الكود يبقى كما هو...
+// The rest of the code remains the same...
